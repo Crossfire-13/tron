@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tron Lightcycles vs AI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background: #0a0a12; color: #00f0ff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100vh; overflow: hidden; }
+        #header { padding: 10px; text-align: center; width: 100%; text-shadow: 0 0 10px #00f0ff; }
+        #status { font-size: 1.1rem; margin-top: 5px; color: #ff0077; text-shadow: 0 0 10px #ff0077; font-weight: bold; }
+        
+        #menu-bar { display: flex; gap: 15px; justify-content: center; align-items: center; margin: 10px 0; background: rgba(0, 240, 255, 0.05); padding: 8px 15px; border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; flex-wrap: wrap; }
+        select { background: #020205; color: #00f0ff; border: 1px solid #00f0ff; padding: 5px; font-family: inherit; font-weight: bold; outline: none; border-radius: 4px; cursor: pointer; }
+        button { background: #ff0077; color: #fff; border: none; padding: 6px 14px; font-family: inherit; font-weight: bold; cursor: pointer; border-radius: 4px; text-shadow: 0 0 5px #000; box-shadow: 0 0 10px rgba(255,0,119,0.4); }
+        button:active { background: #b30054; }
+
+        #canvas-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; max-height: 55vh; }
+        canvas { background: #020205; border: 4px solid #00f0ff; box-shadow: 0 0 20px #00f0ff; max-width: 95vw; max-height: 95vh; aspect-ratio: 1/1; }
+        
+        #controls { width: 100%; max-width: 400px; padding: 15px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 65px); gap: 10px; margin-bottom: 20px; }
+        .btn { background: rgba(0, 240, 255, 0.1); border: 2px solid #00f0ff; border-radius: 12px; color: #00f0ff; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; text-shadow: 0 0 5px #00f0ff; cursor: pointer; touch-action: manipulation; }
+        .btn:active { background: #00f0ff; color: #020205; }
+        #btn-up { grid-column: 2; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        @media (min-width: 768px) { #controls { display: none; } }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <h1>TRON: LIGHTCYCLES</h1>
+        
+        <div id="menu-bar">
+            <label>AI Mode: 
+                <select id="ai-difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </label>
+            <label>Level: 
+                <select id="game-speed">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5" selected>5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
+            </label>
+            <button id="btn-start">RESET</button>
+        </div>
+
+        <div id="status">Press RESET to start</div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <div id="controls">
+        <div class="btn" id="btn-up">▲</div>
+        <div class="btn" id="btn-left">◀</div>
+        <div class="btn" id="btn-down">▼</div>
+        <div class="btn" id="btn-right">▶</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('status');
+        const diffSelect = document.getElementById('ai-difficulty');
+        const speedSelect = document.getElementById('game-speed');
+        const startBtn = document.getElementById('btn-start');
+
+        let gameInterval = null;
+        const stepSize = 5;
+
+        let gameState = {
+            p1: { x: 100, y: 300, dir: 'RIGHT', trail: [] },
+            ai: { x: 500, y: 300, dir: 'LEFT', trail: [] },
+            active: false
+        };
+
+        function initMatch() {
+            if (gameInterval) clearInterval(gameInterval);
+            
+            gameState.p1 = { x: 100, y: 300, dir: 'RIGHT', trail: [{x: 100, y: 300}] };
+            gameState.ai = { x: 500, y: 300, dir: 'LEFT', trail: [{x: 500, y: 300}] };
+            gameState.active = true;
+            statusDiv.innerText = "GO!";
+
+            const level = parseInt(speedSelect.value, 10);
+            const fps = 15 + (level * 3);
+
+            gameInterval = setInterval(gameLoop, 1000 / fps);
+        }
+
+        function gameLoop() {
+            if (!gameState.active) return;
+
+            moveCycle(gameState.p1);
+            runAI();
+            moveCycle(gameState.ai);
+
+            const p1Crash = checkCollision(gameState.p1, gameState.ai);
+            const aiCrash = checkCollision(gameState.ai, gameState.p1);
+
+            if (p1Crash || aiCrash) {
+                gameState.active = false;
+                clearInterval(gameInterval);
+                
+                if (p1Crash && aiCrash) statusDiv.innerText = "TIE CRASH! DRAW!";
+                else if (p1Crash) statusDiv.innerText = "AI WINS! TRY AGAIN.";
+                else statusDiv.innerText = "YOU WIN!";
+            }
+
+            renderGrid();
+        }
+
+        function moveCycle(p) {
+            if (p.dir === 'UP') p.y -= stepSize;
+            if (p.dir === 'DOWN') p.y += stepSize;
+            if (p.dir === 'LEFT') p.x -= stepSize;
+            if (p.dir === 'RIGHT') p.x += stepSize;
+            p.trail.push({ x: p.x, y: p.y });
+        }
+
+        function checkCollision(p, opponent) {
+            if (p.x < 0 || p.x >= canvas.width || p.y < 0 || p.y >= canvas.height) return true;
+
+            for (let i = 0; i < p.trail.length - 1; i++) {
+                if (p.x === p.trail[i].x && p.y === p.trail[i].y) return true;
+            }
+
+            for (let i = 0; i < opponent.trail.length; i++) {
+                if (p.x === opponent.trail[i].x && p.y === opponent.trail[i].y) return true;
+            }
+
+            return false;
+        }
+
+        function countFreeSteps(dir, startX, startY, maxSteps) {
+            let steps = 0;
+            let currX = startX;
+            let currY = startY;
+            let dx = 0, dy = 0;
+            
+            if (dir === 'UP') dy = -stepSize;
+            if (dir === 'DOWN') dy = stepSize;
+            if (dir === 'LEFT') dx = -stepSize;
+            if (dir === 'RIGHT') dx = stepSize;
+
+            for (let s = 1; s <= maxSteps; s++) {
+                currX += dx;
+                currY += dy;
+                let mockBike = { x: currX, y: currY, trail: gameState.ai.trail };
+                if (checkCollision(mockBike, gameState.p1)) break;
+                steps++;
+            }
+            return steps;
+        }
+
+        function runAI() {
+            const ai = gameState.ai;
+            const difficulty = diffSelect.value;
+
+            const directions = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+            const validDirs = directions.filter(d => {
+                if (d === 'UP' && ai.dir === 'DOWN') return false;
+                if (d === 'DOWN' && ai.dir === 'UP') return false;
+                if (d === 'LEFT' && ai.dir === 'RIGHT') return false;
+                if (d === 'RIGHT' && ai.dir === 'LEFT') return false;
+                return true;
+            });
+
+            const lookAheadDepth = (difficulty === 'hard') ? 25 : (difficulty === 'medium' ? 12 : 5);
+            let safeChoices = [];
+
+            validDirs.forEach(d => {
+                let testX = ai.x;
+                let testY = ai.y;
+                if (d === 'UP') testY -= stepSize;
+                if (d === 'DOWN') testY += stepSize;
+                if (d === 'LEFT') testX -= stepSize;
+                if (d === 'RIGHT') testX += stepSize;
+
+                let mockBike = { x: testX, y: testY, trail: ai.trail };
+                if (!checkCollision(mockBike, gameState.p1)) {
+                    const freeSpace = countFreeSteps(d, testX, testY, lookAheadDepth);
+                    safeChoices.push({ dir: d, freeSpace });
+                }
+            });
+
+            if (safeChoices.length === 0) return;
+
+            safeChoices.sort((a, b) => b.freeSpace - a.freeSpace);
+            const currentChoice = safeChoices.find(c => c.dir === ai.dir);
+            const bestChoice = safeChoices[0];
+
+            if (difficulty === 'hard') {
+                if (!currentChoice || currentChoice.freeSpace < bestChoice.freeSpace) {
+                    ai.dir = bestChoice.dir;
+                }
+            } else if (difficulty === 'medium') {
+                if (!currentChoice || currentChoice.freeSpace < 3) {
+                    ai.dir = bestChoice.dir;
+                }
+            } else {
+                if (!currentChoice || Math.random() < 0.25) {
+                    const randomPick = safeChoices[Math.floor(Math.random() * safeChoices.length)];
+                    ai.dir = randomPick.dir;
+                }
+            }
+        }
+
+        function renderGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#041424';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
+
+            drawPlayer(gameState.p1, '#00f0ff', '#00a3ff');
+            drawPlayer(gameState.ai, '#ff0077', '#b30054');
+        }
+
+        function drawPlayer(player, cycleColor, trailColor) {
+            if (player.trail.length === 0) return;
+            ctx.strokeStyle = trailColor;
+            ctx.lineWidth = 6;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = cycleColor;
+            ctx.beginPath();
+            player.trail.forEach((point, i) => {
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 15;
+            ctx.fillRect(player.x - 4, player.y - 4, 8, 8);
+            ctx.shadowBlur = 0;
+        }
+
+        function handleInput(dir) {
+            let p = gameState.p1;
+            if (dir === 'UP' && p.dir !== 'DOWN') p.dir = 'UP';
+            if (dir === 'DOWN' && p.dir !== 'UP') p.dir = 'DOWN';
+            if (dir === 'LEFT' && p.dir !== 'RIGHT') p.dir = 'LEFT';
+            if (dir === 'RIGHT' && p.dir !== 'LEFT') p.dir = 'RIGHT';
+        }
+
+        window.addEventListener('keydown', (e) => {
+            let d = null;
+            if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') d = 'UP';
+            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') d = 'DOWN';
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') d = 'LEFT';
+            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') d = 'RIGHT';
+            if (d) handleInput(d);
+            if (e.key === ' ' || e.key === 'Enter') initMatch();
+        });
+
+        const btnMap = { 'btn-up': 'UP', 'btn-down': 'DOWN', 'btn-left': 'LEFT', 'btn-right': 'RIGHT' };
+        Object.keys(btnMap).forEach(id => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                handleInput(btnMap[id]);
+            });
+        });
+
+        startBtn.addEventListener('click', initMatch);
+
+        renderGrid();
+    </script>
+</body>
+</html>
