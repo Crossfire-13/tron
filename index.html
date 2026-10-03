@@ -5,43 +5,241 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tron Lightcycles vs AI</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #0a0a12; color: #00f0ff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100vh; overflow: hidden; }
-        #header { padding: 10px; text-align: center; width: 100%; text-shadow: 0 0 10px #00f0ff; }
-        #status { font-size: 1.1rem; margin-top: 5px; color: #ff0077; text-shadow: 0 0 10px #ff0077; font-weight: bold; }
-        
-        #menu-bar { display: flex; gap: 15px; justify-content: center; align-items: center; margin: 10px 0; background: rgba(0, 240, 255, 0.05); padding: 8px 15px; border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; flex-wrap: wrap; }
-        select { background: #020205; color: #00f0ff; border: 1px solid #00f0ff; padding: 5px; font-family: inherit; font-weight: bold; outline: none; border-radius: 4px; cursor: pointer; }
-        button { background: #ff0077; color: #fff; border: none; padding: 6px 14px; font-family: inherit; font-weight: bold; cursor: pointer; border-radius: 4px; text-shadow: 0 0 5px #000; box-shadow: 0 0 10px rgba(255,0,119,0.4); }
-        button:active { background: #b30054; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            user-select: none; 
+        }
 
-        #canvas-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; max-height: 55vh; }
-        canvas { background: #020205; border: 4px solid #00f0ff; box-shadow: 0 0 20px #00f0ff; max-width: 95vw; max-height: 95vh; aspect-ratio: 1/1; }
+        body { 
+            background: #0a0a12; 
+            color: #00f0ff; 
+            font-family: 'Courier New', Courier, monospace; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        #header { 
+            padding: 15px; 
+            text-align: center; 
+            width: 100%; 
+            text-shadow: 0 0 20px #00f0ff, 0 0 40px #0088ff; 
+            animation: headerGlow 2s ease-in-out infinite;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        @keyframes headerGlow {
+            0%, 100% { text-shadow: 0 0 20px #00f0ff, 0 0 40px #0088ff; }
+            50% { text-shadow: 0 0 30px #00f0ff, 0 0 60px #0088ff, 0 0 80px #0055ff; }
+        }
+
+        #status { 
+            font-size: 1.2rem; 
+            margin-top: 8px; 
+            color: #ff0077; 
+            text-shadow: 0 0 10px #ff0077, 0 0 20px #ff0088; 
+            font-weight: bold; 
+            letter-spacing: 2px;
+        }
         
-        #controls { width: 100%; max-width: 400px; padding: 15px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 65px); gap: 10px; margin-bottom: 20px; }
-        .btn { background: rgba(0, 240, 255, 0.1); border: 2px solid #00f0ff; border-radius: 12px; color: #00f0ff; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; text-shadow: 0 0 5px #00f0ff; cursor: pointer; touch-action: manipulation; }
-        .btn:active { background: #00f0ff; color: #020205; }
+        #menu-bar { 
+            display: flex; 
+            gap: 20px; 
+            justify-content: center; 
+            align-items: center; 
+            margin: 12px 0; 
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(0, 136, 255, 0.06));
+            padding: 12px 20px; 
+            border: 2px solid rgba(0, 240, 255, 0.3);
+            border-radius: 10px; 
+            flex-wrap: wrap;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        select { 
+            background: #020205; 
+            color: #00f0ff; 
+            border: 2px solid #00f0ff; 
+            padding: 8px 12px; 
+            font-family: inherit; 
+            font-weight: bold; 
+            outline: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+            transition: all 0.2s;
+        }
+
+        select:hover {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        select:focus {
+            background: #1a1a22;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+        }
+
+        button { 
+            background: linear-gradient(135deg, #ff0077, #b30054);
+            color: #fff; 
+            border: 2px solid #ff0077;
+            padding: 8px 18px; 
+            font-family: inherit; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            text-shadow: 0 0 5px #000; 
+            box-shadow: 0 0 12px rgba(255, 0, 119, 0.5);
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            box-shadow: 0 0 20px rgba(255, 0, 119, 0.8);
+            transform: scale(1.05);
+        }
+
+        button:active { 
+            background: linear-gradient(135deg, #b30054, #8a003f);
+            box-shadow: 0 0 15px rgba(255, 0, 119, 0.6);
+        }
+
+        #sound-toggle {
+            width: 50px;
+            height: 30px;
+            background: #020205;
+            border: 2px solid #00f0ff;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            transition: all 0.3s;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+        }
+
+        #sound-toggle.enabled {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.3), rgba(0, 136, 255, 0.2));
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+        }
+
+        .sound-dot {
+            width: 24px;
+            height: 24px;
+            background: #00f0ff;
+            border-radius: 50%;
+            transition: all 0.3s;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+        }
+
+        #sound-toggle.enabled .sound-dot {
+            transform: translateX(20px);
+            background: #00ff88;
+        }
+
+        #canvas-container { 
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            width: 100%; 
+            max-height: 65vh; 
+        }
+
+        canvas { 
+            background: #020205; 
+            border: 4px solid #00f0ff; 
+            box-shadow: 0 0 30px #00f0ff, inset 0 0 20px rgba(0, 240, 255, 0.1); 
+            max-width: 95vw; 
+            max-height: 95vh; 
+            aspect-ratio: 1/1;
+            filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.3));
+        }
+        
+        #controls { 
+            width: 100%; 
+            max-width: 400px; 
+            padding: 15px; 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            grid-template-rows: repeat(2, 65px); 
+            gap: 10px; 
+            margin-bottom: 20px; 
+        }
+
+        .btn { 
+            background: rgba(0, 240, 255, 0.12); 
+            border: 2px solid #00f0ff; 
+            border-radius: 12px; 
+            color: #00f0ff; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-shadow: 0 0 8px #00f0ff; 
+            cursor: pointer; 
+            touch-action: manipulation;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            transition: all 0.1s;
+        }
+
+        .btn:active { 
+            background: #00f0ff; 
+            color: #020205; 
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            transform: scale(0.95);
+        }
+
         #btn-up { grid-column: 2; }
         #btn-left { grid-column: 1; grid-row: 2; }
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
-        @media (min-width: 768px) { #controls { display: none; } }
+
+        @media (min-width: 768px) { 
+            #controls { display: none; } 
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            #menu-bar { gap: 10px; padding: 8px 12px; }
+            label { font-size: 0.9rem; }
+            button { padding: 6px 12px; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <h1>TRON: LIGHTCYCLES</h1>
+        <h1>⚡ TRON LIGHTCYCLES ⚡</h1>
         
         <div id="menu-bar">
-            <label>AI Mode: 
+            <label>AI:
                 <select id="ai-difficulty">
-                    <option value="easy">Easy</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard</option>
+                    <option value="easy">EASY</option>
+                    <option value="medium" selected>MEDIUM</option>
+                    <option value="hard">HARD</option>
                 </select>
             </label>
-            <label>Level: 
+            <label>SPEED:
                 <select id="game-speed">
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -55,10 +253,15 @@
                     <option value="10">10</option>
                 </select>
             </label>
-            <button id="btn-start">RESET</button>
+            <label>SOUND:
+                <div id="sound-toggle" class="enabled">
+                    <div class="sound-dot"></div>
+                </div>
+            </label>
+            <button id="btn-start">START GAME</button>
         </div>
 
-        <div id="status">Press RESET to start</div>
+        <div id="status">Press START GAME to begin</div>
     </div>
 
     <div id="canvas-container">
@@ -73,12 +276,153 @@
     </div>
 
     <script>
+        // ===== Audio Manager =====
+        class AudioManager {
+            constructor() {
+                this.enabled = true;
+                this.audioContext = null;
+                this.masterVolume = 0.3;
+                this.initialized = false;
+            }
+
+            init() {
+                if (this.initialized) return;
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.initialized = true;
+                } catch (e) {
+                    console.log('Web Audio API not available');
+                }
+            }
+
+            playTone(frequency, duration, type = 'sine', volume = 0.3) {
+                if (!this.enabled || !this.audioContext) return;
+                
+                try {
+                    const now = this.audioContext.currentTime;
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+
+                    osc.type = type;
+                    osc.frequency.value = frequency;
+                    gain.gain.setValueAtTime(volume * this.masterVolume, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+                    osc.start(now);
+                    osc.stop(now + duration);
+                } catch (e) {
+                    console.log('Audio playback error:', e);
+                }
+            }
+
+            // Tron-style laser sound
+            playLaserShot() {
+                if (!this.enabled || !this.audioContext) return;
+                
+                try {
+                    const now = this.audioContext.currentTime;
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                    
+                    gain.gain.setValueAtTime(0.15 * this.masterVolume, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } catch (e) {
+                    console.log('Audio playback error:', e);
+                }
+            }
+
+            // Game over / crash sound
+            playCrash() {
+                if (!this.enabled || !this.audioContext) return;
+                
+                try {
+                    const now = this.audioContext.currentTime;
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+                    
+                    gain.gain.setValueAtTime(0.2 * this.masterVolume, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } catch (e) {
+                    console.log('Audio playback error:', e);
+                }
+            }
+
+            // Victory sound
+            playVictory() {
+                if (!this.enabled || !this.audioContext) return;
+
+                try {
+                    const notes = [523.25, 659.25, 783.99, 1046.5]; // C, E, G, C (higher octave)
+                    const now = this.audioContext.currentTime;
+                    
+                    notes.forEach((freq, i) => {
+                        this.playTone(freq, 0.3, 'sine', 0.25);
+                    });
+                } catch (e) {
+                    console.log('Audio playback error:', e);
+                }
+            }
+
+            // Grid sound (ambient)
+            playGridPulse() {
+                if (!this.enabled || !this.audioContext) return;
+                
+                try {
+                    const now = this.audioContext.currentTime;
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+
+                    osc.type = 'sine';
+                    osc.frequency.value = 220;
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.08 * this.masterVolume, now + 0.05);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.15);
+
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } catch (e) {
+                    console.log('Audio playback error:', e);
+                }
+            }
+        }
+
+        const audioManager = new AudioManager();
+
+        // ===== Game Canvas & UI =====
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const statusDiv = document.getElementById('status');
         const diffSelect = document.getElementById('ai-difficulty');
         const speedSelect = document.getElementById('game-speed');
         const startBtn = document.getElementById('btn-start');
+        const soundToggle = document.getElementById('sound-toggle');
 
         let gameInterval = null;
         const stepSize = 5;
@@ -89,13 +433,27 @@
             active: false
         };
 
+        // Sound toggle
+        soundToggle.addEventListener('click', () => {
+            audioManager.init();
+            audioManager.enabled = !audioManager.enabled;
+            soundToggle.classList.toggle('enabled', audioManager.enabled);
+            if (audioManager.enabled) {
+                audioManager.playGridPulse();
+            }
+        });
+
         function initMatch() {
             if (gameInterval) clearInterval(gameInterval);
+            
+            audioManager.init();
             
             gameState.p1 = { x: 100, y: 300, dir: 'RIGHT', trail: [{x: 100, y: 300}] };
             gameState.ai = { x: 500, y: 300, dir: 'LEFT', trail: [{x: 500, y: 300}] };
             gameState.active = true;
-            statusDiv.innerText = "GO!";
+            statusDiv.innerText = "⚡ GO! ⚡";
+
+            audioManager.playLaserShot();
 
             const level = parseInt(speedSelect.value, 10);
             const fps = 15 + (level * 3);
@@ -117,9 +475,16 @@
                 gameState.active = false;
                 clearInterval(gameInterval);
                 
-                if (p1Crash && aiCrash) statusDiv.innerText = "TIE CRASH! DRAW!";
-                else if (p1Crash) statusDiv.innerText = "AI WINS! TRY AGAIN.";
-                else statusDiv.innerText = "YOU WIN!";
+                if (p1Crash && aiCrash) {
+                    statusDiv.innerText = "⚡ TIE CRASH ⚡ BOTH DEFEATED!";
+                    audioManager.playCrash();
+                } else if (p1Crash) {
+                    statusDiv.innerText = "💻 AI WINS! GAME OVER!";
+                    audioManager.playCrash();
+                } else {
+                    statusDiv.innerText = "🎮 YOU WIN! VICTORY!";
+                    audioManager.playVictory();
+                }
             }
 
             renderGrid();
@@ -224,23 +589,37 @@
         function renderGrid() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            ctx.strokeStyle = '#041424';
+            // Grid background
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
             ctx.lineWidth = 1;
             for (let i = 0; i < canvas.width; i += 20) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+                ctx.beginPath(); 
+                ctx.moveTo(i, 0); 
+                ctx.lineTo(i, canvas.height); 
+                ctx.stroke();
+                ctx.beginPath(); 
+                ctx.moveTo(0, i); 
+                ctx.lineTo(canvas.width, i); 
+                ctx.stroke();
             }
 
-            drawPlayer(gameState.p1, '#00f0ff', '#00a3ff');
-            drawPlayer(gameState.ai, '#ff0077', '#b30054');
+            drawPlayer(gameState.p1, '#00f0ff', '#0088ff');
+            drawPlayer(gameState.ai, '#ff0077', '#ff0099');
         }
 
         function drawPlayer(player, cycleColor, trailColor) {
             if (player.trail.length === 0) return;
+            
+            // Trail with glow
             ctx.strokeStyle = trailColor;
-            ctx.lineWidth = 6;
-            ctx.shadowBlur = 10;
+            ctx.lineWidth = 8;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = cycleColor;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
             ctx.beginPath();
             player.trail.forEach((point, i) => {
                 if (i === 0) ctx.moveTo(point.x, point.y);
@@ -248,9 +627,18 @@
             });
             ctx.stroke();
 
+            // Cycle head with glow
+            ctx.fillStyle = cycleColor;
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = cycleColor;
+            ctx.fillRect(player.x - 5, player.y - 5, 10, 10);
+            
+            // Inner bright point
             ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 15;
-            ctx.fillRect(player.x - 4, player.y - 4, 8, 8);
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = cycleColor;
+            ctx.fillRect(player.x - 2, player.y - 2, 4, 4);
+            
             ctx.shadowBlur = 0;
         }
 
@@ -262,6 +650,7 @@
             if (dir === 'RIGHT' && p.dir !== 'LEFT') p.dir = 'RIGHT';
         }
 
+        // Keyboard controls
         window.addEventListener('keydown', (e) => {
             let d = null;
             if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') d = 'UP';
@@ -272,6 +661,7 @@
             if (e.key === ' ' || e.key === 'Enter') initMatch();
         });
 
+        // Mobile controls
         const btnMap = { 'btn-up': 'UP', 'btn-down': 'DOWN', 'btn-left': 'LEFT', 'btn-right': 'RIGHT' };
         Object.keys(btnMap).forEach(id => {
             const btn = document.getElementById(id);
@@ -283,6 +673,7 @@
 
         startBtn.addEventListener('click', initMatch);
 
+        // Initial render
         renderGrid();
     </script>
 </body>
